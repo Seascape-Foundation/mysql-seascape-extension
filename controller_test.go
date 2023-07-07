@@ -7,11 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blocklords/sds/db/handler"
-	"github.com/blocklords/sds/service/configuration"
-	"github.com/blocklords/sds/service/log"
-	"github.com/blocklords/sds/service/parameter"
-	"github.com/blocklords/sds/service/remote"
+	"github.com/Seascape-Foundation/mysql-seascape-extension/handler"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 )
@@ -114,7 +110,7 @@ func (suite *TestControllerSuite) TestInsert() {
 		Arguments: arguments,
 	}
 	var read_reply handler.SelectRowReply
-	err = handler.SELECT_ROW.Request(suite.client, request, &read_reply)
+	err = handler.SelectRow.Request(suite.client, request, &read_reply)
 	suite.Require().NoError(err)
 	suite.Require().EqualValues("test_id", read_reply.Outputs["abi_id"])
 
@@ -125,7 +121,7 @@ func (suite *TestControllerSuite) TestInsert() {
 		Tables: []string{"storage_abi"},
 	}
 	var reply_all handler.SelectAllReply
-	err = handler.SELECT_ALL.Request(suite.client, request, &reply_all)
+	err = handler.SelectAll.Request(suite.client, request, &reply_all)
 	suite.Require().NoError(err)
 	suite.T().Log(reply_all)
 	suite.Require().Len(reply_all.Rows, 1)

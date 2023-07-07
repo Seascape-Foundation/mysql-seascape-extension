@@ -5,18 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/Seascape-Foundation/sds-service-lib/configuration"
+	"github.com/Seascape-Foundation/sds-service-lib/log"
 	"sync"
 	"time"
 
-	"github.com/blocklords/sds/service/log"
-
-	"github.com/blocklords/sds/common/data_type/key_value"
-	"github.com/blocklords/sds/service/configuration"
+	"github.com/Seascape-Foundation/sds-common-lib/data_type/key_value"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Any configuration time can not be greater than this
-const TIMEOUT_CAP = 3600
+// TimeoutCap Any configuration time can not be greater than this
+const TimeoutCap = 3600
 
 type DatabaseParameters struct {
 	hostname string
@@ -31,7 +30,7 @@ type DatabaseCredentials struct {
 	Password string `json:"password"`
 }
 
-// Global database structure that's initiated in the main().
+// Database Global database structure that's initiated in the main().
 // Then its passed to all controllers.
 type Database struct {
 	Connection      *sql.DB
@@ -40,7 +39,7 @@ type Database struct {
 	logger          log.Logger
 }
 
-// The configuration parameters
+// DatabaseConfigurations The configuration parameters
 // The values are the default values if it wasn't provided by the user
 // Set the default value to nil, if the parameter is required from the user
 var DatabaseConfigurations = configuration.DefaultConfig{
@@ -55,35 +54,35 @@ var DatabaseConfigurations = configuration.DefaultConfig{
 	}),
 }
 
-// Database parameters fetched from the environment variables.
+// GetParameters returns the database parameters fetched from the environment variables.
 //
 // The `app_config` keeps the default variables if the parameters were not set.
-func GetParameters(app_config *configuration.Config) (*DatabaseParameters, error) {
-	timeout := app_config.GetUint64("SDS_DATABASE_TIMEOUT")
-	if timeout > TIMEOUT_CAP {
-		return nil, fmt.Errorf("'SDS_DATABASE_TIMEOUT' can not be greater than %d (seconds)", TIMEOUT_CAP)
+func GetParameters(appConfig *configuration.Config) (*DatabaseParameters, error) {
+	timeout := appConfig.GetUint64("SDS_DATABASE_TIMEOUT")
+	if timeout > TimeoutCap {
+		return nil, fmt.Errorf("'SDS_DATABASE_TIMEOUT' can not be greater than %d (seconds)", TimeoutCap)
 	} else if timeout == 0 {
 		return nil, errors.New("the 'SDS_DATABASE_TIMEOUT' can not be zero")
 	}
 
 	return &DatabaseParameters{
-		hostname: app_config.GetString("SDS_DATABASE_HOST"),
-		port:     app_config.GetString("SDS_DATABASE_PORT"),
-		name:     app_config.GetString("SDS_DATABASE_NAME"),
+		hostname: appConfig.GetString("SDS_DATABASE_HOST"),
+		port:     appConfig.GetString("SDS_DATABASE_PORT"),
+		name:     appConfig.GetString("SDS_DATABASE_NAME"),
 		timeout:  time.Duration(timeout) * time.Second,
 	}, nil
 }
 
-// Default user/password that has access to the database
-func GetDefaultCredentials(app_config *configuration.Config) DatabaseCredentials {
+// GetDefaultCredentials returns the default user/password that has access to the database
+func GetDefaultCredentials(appConfig *configuration.Config) DatabaseCredentials {
 	return DatabaseCredentials{
-		Username: app_config.GetString("SDS_DATABASE_USERNAME"),
-		Password: app_config.GetString("SDS_DATABASE_PASSWORD"),
+		Username: appConfig.GetString("SDS_DATABASE_USERNAME"),
+		Password: appConfig.GetString("SDS_DATABASE_PASSWORD"),
 	}
 }
 
 // Open establishes a database connection
-func connect_with_default(app_config *configuration.Config, logger log.Logger, parameters *DatabaseParameters) (*Database, error) {
+func connectWithDefault(appConfig *configuration.Config, logger log.Logger, parameters *DatabaseParameters) (*Database, error) {
 	database := &Database{
 		Connection:      nil,
 		connectionMutex: sync.Mutex{},
@@ -92,7 +91,7 @@ func connect_with_default(app_config *configuration.Config, logger log.Logger, p
 	}
 
 	// establish the first connection
-	if err := database.Reconnect(GetDefaultCredentials(app_config)); err != nil {
+	if err := database.Reconnect(GetDefaultCredentials(appConfig)); err != nil {
 		return nil, fmt.Errorf("database.reconnect: %w", err)
 	}
 
@@ -108,28 +107,28 @@ func (database *Database) Timeout() time.Duration {
 //  1. construct a connection string using the given credentials
 //  2. establish a database connection
 //  3. close & replace the existing connection with the new one behind a mutex
-func (db *Database) Reconnect(credentials DatabaseCredentials) error {
-	ctx, cancelContextFunc := context.WithTimeout(context.Background(), db.parameters.timeout)
+func (database *Database) Reconnect(credentials DatabaseCredentials) error {
+	ctx, cancelContextFunc := context.WithTimeout(context.Background(), database.parameters.timeout)
 	defer cancelContextFunc()
 
-	db.logger.Info(
+	database.logger.Info(
 		"connecting to `mysql` database",
 		"protocol", "tcp",
-		"database", db.parameters.name,
-		"host", db.parameters.hostname,
-		"port", db.parameters.port,
+		"database", database.parameters.name,
+		"host", database.parameters.hostname,
+		"port", database.parameters.port,
 		"user", credentials.Username,
-		"timeout", db.parameters.timeout,
+		"timeout", database.parameters.timeout,
 	)
 
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?timeout=%s",
 		credentials.Username,
 		credentials.Password,
-		db.parameters.hostname,
-		db.parameters.port,
-		db.parameters.name,
-		db.parameters.timeout.String(),
+		database.parameters.hostname,
+		database.parameters.port,
+		database.parameters.name,
+		database.parameters.timeout.String(),
 	)
 
 	connection, err := sql.Open("mysql", dsn)
@@ -151,32 +150,32 @@ func (db *Database) Reconnect(credentials DatabaseCredentials) error {
 		}
 	}
 
-	db.closeReplaceConnection(connection)
+	database.closeReplaceConnection(connection)
 
-	db.logger.Info("connection success!", "database", db.parameters.name)
+	database.logger.Info("connection success!", "database", database.parameters.name)
 
 	return nil
 }
 
-func (db *Database) closeReplaceConnection(new *sql.DB) {
-	/* */ db.connectionMutex.Lock()
-	defer db.connectionMutex.Unlock()
+func (database *Database) closeReplaceConnection(new *sql.DB) {
+	/* */ database.connectionMutex.Lock()
+	defer database.connectionMutex.Unlock()
 
 	// close the existing connection, if exists
-	if db.Connection != nil {
-		_ = db.Connection.Close()
+	if database.Connection != nil {
+		_ = database.Connection.Close()
 	}
 
 	// replace with a new connection
-	db.Connection = new
+	database.Connection = new
 }
 
-func (db *Database) Close() error {
-	/* */ db.connectionMutex.Lock()
-	defer db.connectionMutex.Unlock()
+func (database *Database) Close() error {
+	/* */ database.connectionMutex.Lock()
+	defer database.connectionMutex.Unlock()
 
-	if db.Connection != nil {
-		err := db.Connection.Close()
+	if database.Connection != nil {
+		err := database.Connection.Close()
 		if err != nil {
 			return fmt.Errorf("connection.Close: %w", err)
 		}
@@ -185,12 +184,12 @@ func (db *Database) Close() error {
 	return nil
 }
 
-// Query
-func (db *Database) Query(ctx context.Context, query string, arguments []interface{}) ([]interface{}, error) {
-	db.connectionMutex.Lock()
-	defer db.connectionMutex.Unlock()
+// Query is the sample to test the connection
+func (database *Database) Query(ctx context.Context, query string, arguments []interface{}) ([]interface{}, error) {
+	database.connectionMutex.Lock()
+	defer database.connectionMutex.Unlock()
 
-	rows, err := db.Connection.QueryContext(ctx, query, arguments...)
+	rows, err := database.Connection.QueryContext(ctx, query, arguments...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute '%q' query with arguments %v: %w", query, arguments, err)
 	}

@@ -143,9 +143,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/blocklords/sds/service/configuration/env"
-	"github.com/blocklords/sds/service/communication/message"
-	"github.com/blocklords/sds/common/topic"
+	"github.com/Seascape-Foundation/sds-service-libconfiguration/env"
+	"github.com/Seascape-Foundation/sds-service-libcommunication/message"
+	"github.com/Seascape-Foundation/sds-common-libtopic"
 	"github.com/blocklords/sds/sdk"
 )
 

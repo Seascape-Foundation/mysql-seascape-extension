@@ -3,22 +3,22 @@ package handler
 
 import (
 	"fmt"
+	"github.com/Seascape-Foundation/sds-common-lib/data_type"
 
-	"github.com/blocklords/sds/common/data_type"
-	"github.com/blocklords/sds/common/data_type/key_value"
-	"github.com/blocklords/sds/service/communication/command"
+	"github.com/Seascape-Foundation/sds-common-lib/data_type/key_value"
+	"github.com/Seascape-Foundation/sds-service-lib/communication/command"
 
 	zmq "github.com/pebbe/zmq4"
 )
 
 const (
-	NEW_CREDENTIALS command.CommandName = "new-credentials" // for pull controller, to receive credentials from vault
-	SELECT_ROW      command.CommandName = "select-row"      // Get one row, if it doesn't exist, return error
-	SELECT_ALL      command.CommandName = "select"          // Read multiple line
-	INSERT          command.CommandName = "insert"          // insert new row
-	UPDATE          command.CommandName = "update"          // update the existing row
-	EXIST           command.CommandName = "exist"           // Returns true or false if select query has some rows
-	DELETE          command.CommandName = "delete"          // Delete some rows from database
+	NewCredentials command.Name = "new-credentials" // for pull controller, to receive credentials from vault
+	SelectRow      command.Name = "select-row"      // Get one row, if it doesn't exist, return error
+	SelectAll      command.Name = "select"          // Read multiple line
+	INSERT         command.Name = "insert"          // insert new row
+	UPDATE         command.Name = "update"          // update the existing row
+	EXIST          command.Name = "exist"           // Returns true or false if select query has some rows
+	DELETE         command.Name = "delete"          // Delete some rows from database
 )
 
 // DatabaseQueryRequest has the sql and it's parameters on part with commands.
@@ -82,17 +82,17 @@ func PushSocket() (*zmq.Socket, error) {
 	return sock, nil
 }
 
-// the bytes array are accepted as base64 string with "==" tail.
+// DeserializeBytes the bytes array are accepted as base64 string with "==" tail.
 // deserialize it into the sequence of the bytes.
 //
 // If no arguments were given, or no need to serialize, then return nil
 func (request DatabaseQueryRequest) DeserializeBytes() error {
-	for i, raw_arg := range request.Arguments {
-		base_str, ok := raw_arg.(string)
+	for i, rawArg := range request.Arguments {
+		baseStr, ok := rawArg.(string)
 		if !ok {
 			continue
 		}
-		str := data_type.DecodeJsonPrefixed(base_str)
+		str := data_type.DecodeJsonPrefixed(baseStr)
 		if len(str) > 0 {
 			request.Arguments[i] = []byte(str)
 			continue
@@ -116,19 +116,19 @@ func (request DatabaseQueryRequest) BuildSelectQuery() (string, error) {
 
 	str := `SELECT `
 
-	last_field_index := len(request.Fields) - 1
+	lastFieldIndex := len(request.Fields) - 1
 	for i, field := range request.Fields {
 		str += field
-		if i < last_field_index {
+		if i < lastFieldIndex {
 			str += `, `
 		}
 	}
 
 	str += ` FROM `
-	last_table_index := len(request.Tables) - 1
+	lastTableIndex := len(request.Tables) - 1
 	for i, table := range request.Tables {
 		str += table
-		if i < last_table_index {
+		if i < lastTableIndex {
 			str += `, `
 		}
 	}
@@ -153,10 +153,10 @@ func (request DatabaseQueryRequest) BuildExistQuery() (string, error) {
 	}
 
 	str := `SELECT 1 FROM `
-	last_table_index := len(request.Tables) - 1
+	lastTableIndex := len(request.Tables) - 1
 	for i, table := range request.Tables {
 		str += table
-		if i < last_table_index {
+		if i < lastTableIndex {
 			str += `, `
 		}
 	}
@@ -192,20 +192,20 @@ func (request DatabaseQueryRequest) BuildUpdateQuery() (string, error) {
 
 	str := `UPDATE `
 	// tables
-	last_table_index := len(request.Tables) - 1
+	lastTableIndex := len(request.Tables) - 1
 	for i, table := range request.Tables {
 		str += table
-		if i < last_table_index {
+		if i < lastTableIndex {
 			str += `, `
 		}
 	}
 
 	str += ` SET `
 	// the fields
-	last_field_index := len(request.Fields) - 1
+	lastFieldIndex := len(request.Fields) - 1
 	for i, field := range request.Fields {
 		str += field + " = ?"
-		if i < last_field_index {
+		if i < lastFieldIndex {
 			str += `, `
 		}
 	}
@@ -228,20 +228,20 @@ func (request DatabaseQueryRequest) BuildInsertRowQuery() (string, error) {
 
 	str := `INSERT INTO `
 	// tables
-	last_table_index := len(request.Tables) - 1
+	lastTableIndex := len(request.Tables) - 1
 	for i, table := range request.Tables {
 		str += table
-		if i < last_table_index {
+		if i < lastTableIndex {
 			str += `, `
 		}
 	}
 
 	str += ` (`
 	// the fields
-	last_field_index := len(request.Fields) - 1
+	lastFieldIndex := len(request.Fields) - 1
 	for i, field := range request.Fields {
 		str += field
-		if i < last_field_index {
+		if i < lastFieldIndex {
 			str += `, `
 		}
 	}
@@ -249,7 +249,7 @@ func (request DatabaseQueryRequest) BuildInsertRowQuery() (string, error) {
 	str += `) VALUES ( `
 	for i := range request.Fields {
 		str += `?`
-		if i < last_field_index {
+		if i < lastFieldIndex {
 			str += `, `
 		}
 	}
@@ -269,10 +269,10 @@ func (request DatabaseQueryRequest) BuildDeleteQuery() (string, error) {
 
 	str := `DELETE FROM `
 	// tables
-	last_table_index := len(request.Tables) - 1
+	lastTableIndex := len(request.Tables) - 1
 	for i, table := range request.Tables {
 		str += table
-		if i < last_table_index {
+		if i < lastTableIndex {
 			str += `, `
 		}
 	}
@@ -283,10 +283,10 @@ func (request DatabaseQueryRequest) BuildDeleteQuery() (string, error) {
 
 	str += ` WHERE `
 	// the fields
-	last_field_index := len(request.Fields) - 1
+	lastFieldIndex := len(request.Fields) - 1
 	for i, field := range request.Fields {
 		str += field
-		if i < last_field_index {
+		if i < lastFieldIndex {
 			str += ` AND `
 		}
 	}
