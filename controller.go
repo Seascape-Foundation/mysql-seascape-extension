@@ -3,7 +3,7 @@
 //
 // The database is creating a new service with the inproc reply controller.
 // For any database operation interact with the service.
-package database
+package main
 
 import (
 	"database/sql"

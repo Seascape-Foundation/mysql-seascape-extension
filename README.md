@@ -360,11 +360,6 @@ Either set the Security or Install SDS Gateway. Or setup the [configurations](#s
 ---
 # Security
 
-## Vault
-For setting up the Vault, visit the page:
-[Vault setup](./VAULT.md).
-
----
 
 # SeascapeSDS Core
 This go module contains the core features

@@ -1,4 +1,4 @@
-module github.com/blocklords/sds
+module github.com/Seascape-Foundation/mysql-seascape-extension
 
 go 1.19
 
