@@ -104,9 +104,6 @@ func (request DatabaseQueryRequest) DeserializeBytes() error {
 
 // BuildSelectQuery creates a SELECT SQL query
 func (request DatabaseQueryRequest) BuildSelectQuery() (string, error) {
-	if len(request.Fields) == 0 {
-		return "", fmt.Errorf("missing Fields parameter")
-	}
 	if len(request.Tables) == 0 {
 		return "", fmt.Errorf("missing Tables parameter")
 	}
@@ -116,15 +113,20 @@ func (request DatabaseQueryRequest) BuildSelectQuery() (string, error) {
 
 	str := `SELECT `
 
-	lastFieldIndex := len(request.Fields) - 1
-	for i, field := range request.Fields {
-		str += field
-		if i < lastFieldIndex {
-			str += `, `
+	if len(request.Fields) == 0 {
+		str += " * FROM "
+	} else {
+
+		lastFieldIndex := len(request.Fields) - 1
+		for i, field := range request.Fields {
+			str += field
+			if i < lastFieldIndex {
+				str += `, `
+			}
 		}
+		str += ` FROM `
 	}
 
-	str += ` FROM `
 	lastTableIndex := len(request.Tables) - 1
 	for i, table := range request.Tables {
 		str += table

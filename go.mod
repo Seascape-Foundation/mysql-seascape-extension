@@ -3,12 +3,11 @@ module github.com/Seascape-Foundation/mysql-seascape-extension
 go 1.19
 
 replace github.com/Seascape-Foundation/sds-service-lib => D:/repo/sds-service-lib
-
 replace github.com/Seascape-Foundation/sds-common-lib => D:/repo/sds-common-lib
 
 require (
 	github.com/Seascape-Foundation/sds-common-lib v0.0.0-20230706114026-ffdae7101871
-	github.com/Seascape-Foundation/sds-service-lib v0.0.0-20230706124111-40083a479bba
+	github.com/Seascape-Foundation/sds-service-lib v0.0.0-20230707141352-080b6bc89ddf
 	github.com/stretchr/testify v1.8.2
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.0.0-20230404111220-09208cd51fac
 )
